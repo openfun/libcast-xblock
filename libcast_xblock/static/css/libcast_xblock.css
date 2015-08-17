@@ -1,0 +1,9 @@
+/* CSS for LibcastXBlock */
+
+.libcast_xblock_block .count {
+    font-weight: bold;
+}
+
+.libcast_xblock_block p {
+    cursor: pointer;
+}
