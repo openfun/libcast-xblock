@@ -1,0 +1,33 @@
+<div class="libcast-xblock" data-video-id="{{ self.video_id }}">
+  <!-- TODO
+    - transcripts
+    - download links
+    - log events
+    - add swf fallback https://github.com/videojs/video.js/blob/stable/docs/guides/setup.md#self-hosted
+  -->
+  <video
+    class="video-js vjs-default-skin vjs-big-play-centered"
+    controls
+    preload="auto"
+    width="100%"
+    height="375px"
+    poster="{{ self.thumbnail_url }}"
+    >
+    {% for source in self.video_sources %}
+    <source src="{{ source.url }}" type="{{ source.type }}" label="{{ source.label }}" res="{{ source.res }}"/>
+    {% endfor %}
+    {% for subtitle in self.subtitles %}
+    <track src="{{ self.track_src }}?id={{ subtitle.id|urlencode }}" kind="subtitles" srclang="{{ subtitle.language }}" label="{{ subtitle.language_label}}">
+    {% endfor %}
+    <p class="vjs-no-js">To view this video please enable JavaScript, and consider upgrading to a web browser that <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a></p>
+  </video>
+  {% if self.downloadable_files %}
+  <p>Télécharger la vidéo :
+    {% for file in self.downloadable_files %}
+    <a href="{{ file.url }}" target="_blank">{{ file.name }}</a>
+    {% if not forloop.last %}/{% endif %}
+    {% endfor %}
+  </p>
+  {% endif %}
+
+</div>
