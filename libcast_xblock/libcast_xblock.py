@@ -134,6 +134,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         content = template.render(Context({"self": self}))
         fragment.add_content(content)
 
+        fragment.add_css(self.resource_string("public/css/style.css"))
         # This hack requires us to hardcode the url to the css file.
         # see no other way to proceed.  Loading static files directly from
         # fun-apps/edx-platform is unconventional. It would be great to find a
