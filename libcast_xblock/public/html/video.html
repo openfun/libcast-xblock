@@ -1,10 +1,8 @@
-<div class="libcast-xblock" data-video-id="{{ self.video_id }}">
-  <!-- TODO
-    - transcripts
-    - download links
-    - log events
-    - add swf fallback https://github.com/videojs/video.js/blob/stable/docs/guides/setup.md#self-hosted
-  -->
+<div class="libcast-xblock" data-video-id="{{ video_id }}">
+  {% for level, message in messages %}
+  <p class="{{ level }}"><i class="icon fa fa-{{ level }}"></i><span>{{ message }}</span></p>
+  {% endfor %}
+
   <div class="videoplayer">
     <video
       class="video-js vjs-default-skin vjs-big-play-centered"
@@ -12,14 +10,14 @@
       preload="auto"
       width="100%"
       height="375px"
-      poster="{{ self.thumbnail_url }}"
+      poster="{{ thumbnail_url }}"
       data-setup='{ "playbackRates": [0.5, 1, 1.5, 2] }'
       >
-      {% for source in self.video_sources %}
+      {% for source in video_sources %}
       <source src="{{ source.url }}" type="{{ source.type }}" label="{{ source.label }}" res="{{ source.res }}"/>
       {% endfor %}
-      {% for subtitle in self.subtitles %}
-      <track src="{{ self.track_src }}?id={{ subtitle.id|urlencode }}" kind="subtitles" srclang="{{ subtitle.language }}" label="{{ subtitle.language_label}}">
+      {% for subtitle in subtitles %}
+      <track src="{{ transcript_root_url }}?id={{ subtitle.id|urlencode }}" kind="subtitles" srclang="{{ subtitle.language }}" label="{{ subtitle.language_label}}">
       {% endfor %}
       <p class="vjs-no-js">To view this video please enable JavaScript, and consider upgrading to a web browser that <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a></p>
     </video>
@@ -27,9 +25,9 @@
     <div class="transcript"></div>
   </div>
 
-  {% if self.downloadable_files %}
+  {% if downloadable_files %}
   <p>Télécharger la vidéo :
-    {% for file in self.downloadable_files %}
+    {% for file in downloadable_files %}
     <a href="{{ file.url }}" target="_blank">{{ file.name }}</a>
     {% if not forloop.last %}/{% endif %}
     {% endfor %}

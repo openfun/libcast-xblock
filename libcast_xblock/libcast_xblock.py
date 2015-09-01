@@ -54,47 +54,18 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
 
     def __init__(self, *args, **kwargs):
         super(LibcastXBlock, self).__init__(*args, **kwargs)
-        self._libcast_client = None
 
-    @property
-    def libcast_client(self):
-        if self._libcast_client is None:
-            try:
-                self._libcast_client = libcast.Client(self.course_key_string)
-            except (libcast.ClientError, libcast.MissingCredentials) as e:
-                logger.exception(e)
-                return libcast.Client("")
-        return self._libcast_client
+    def get_libcast_client(self):
+        return libcast.Client(self.course_key_string)
+
+    def get_libcast_urls(self):
+        return libcast.LibcastUrls(self.course_key_string)
 
     @property
     def course_key_string(self):
         return unicode(self.location.course_key)
 
-    def video_sources(self):
-        if not self.video_id:
-            return []
-        return self.libcast_client.video_sources(self.video_id)
-
-    def downloadable_files(self):
-        if not self.video_id:
-            return []
-        return self.libcast_client.downloadable_files(self.video_id)
-
-    def thumbnail_url(self):
-        if not self.video_id:
-            return ""
-        return self.libcast_client.urls.thumbnail_url(self.video_id)
-
-    def subtitles(self):
-        if not self.video_id:
-            return []
-        try:
-            return self.libcast_client.get_video_subtitles(self.video_id)
-        except (libcast.ClientError, libcast.MissingCredentials) as e:
-            logger.exception(e)
-            return []
-
-    def track_src(self):
+    def transcript_root_url(self):
         url = self.runtime.handler_url(self, 'transcript')
         # url is suffixed with '?' in preview mode
         return url.strip('?')
@@ -112,11 +83,12 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         them to vtt format.
         """
         subtitle_id = request.GET.get('id')
-        if subtitle_id and self.video_id:
-            url = self.libcast_client.urls.subtitle_href(self.video_id, subtitle_id)
-            caps = videoproviders.subtitles.get_vtt_content(url) or ""
-            return webob.Response(caps, content_type='text/vtt')
-        return webob.Response(status=404)
+        if not subtitle_id or not self.video_id:
+            return webob.Response(status=404)
+        libcast_urls = self.get_libcast_urls()
+        url = libcast_urls.subtitle_href(self.video_id, subtitle_id)
+        caps = videoproviders.subtitles.get_vtt_content(url) or ""
+        return webob.Response(caps, content_type='text/vtt')
 
 
     def student_view(self, context=None):
@@ -131,7 +103,40 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         fragment = Fragment()
         template_content = self.resource_string("public/html/video.html")
         template = Template(template_content)
-        content = template.render(Context({"self": self}))
+        messages = []# tuple list
+        context = {
+            'video_id': self.video_id,
+            'transcript_root_url': self.transcript_root_url(),
+            'messages': messages,
+            'video_sources': [],
+            'subtitles': [],
+            'downloadable_files': [],
+        }
+        if not self.video_id:
+            messages.append(('warning', ugettext_lazy(
+                "You need to define a valid video ID. "
+                "Video IDs for your course can be found in the video upload"
+                " dashboard."
+            )))
+        else:
+            libcast_urls = self.get_libcast_urls()
+            context.update({
+                'thumbnail_url': libcast_urls.thumbnail_url(self.video_id)
+            })
+            try:
+                libcast_client = self.get_libcast_client()
+                context.update({
+                    'video_sources': libcast_client.video_sources(self.video_id),
+                    'subtitles': libcast_client.get_video_subtitles(self.video_id),
+                    'downloadable_files': libcast_client.downloadable_files(self.video_id),
+                })
+            except libcast.MissingCredentials as e:
+                messages.append(('error', e.verbose_message))
+            except libcast.ClientError as e:
+                logger.exception(e)
+                messages.append(('error', ugettext_lazy("An unexpected error occurred.")))
+
+        content = template.render(Context(context))
         fragment.add_content(content)
 
         fragment.add_css(self.resource_string("public/css/style.css"))
