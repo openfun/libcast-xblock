@@ -30,7 +30,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         help=ugettext_lazy("The name students see. This name appears in "
                            "the course ribbon and as a header for the video."),
         display_name=ugettext_lazy("Component Display Name"),
-        default=ugettext_lazy("Libcast video"),
+        default=ugettext_lazy("New video"),
         scope=Scope.settings
     )
 
@@ -49,7 +49,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         default=True
     )
 
-    editable_fields = ('video_id',)
+    editable_fields = ('video_id', 'display_name',)
 
 
     def __init__(self, *args, **kwargs):
