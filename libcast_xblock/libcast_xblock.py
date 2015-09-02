@@ -49,7 +49,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         default=True
     )
 
-    editable_fields = ('video_id', 'display_name',)
+    editable_fields = ('display_name', 'video_id', 'allow_download', )
 
 
     def __init__(self, *args, **kwargs):
