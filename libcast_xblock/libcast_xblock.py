@@ -128,8 +128,9 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
                 context.update({
                     'video_sources': libcast_client.video_sources(self.video_id),
                     'subtitles': libcast_client.get_video_subtitles(self.video_id),
-                    'downloadable_files': libcast_client.downloadable_files(self.video_id),
                 })
+                if self.allow_download:
+                    context['downloadable_files'] = libcast_client.downloadable_files(self.video_id)
             except libcast.MissingCredentials as e:
                 messages.append(('error', e.verbose_message))
             except libcast.ClientError as e:
