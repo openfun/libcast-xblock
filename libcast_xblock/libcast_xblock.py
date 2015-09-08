@@ -111,6 +111,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
             'video_sources': [],
             'subtitles': [],
             'downloadable_files': [],
+            'thumbnail_url': '',
         }
         if not self.video_id:
             messages.append(('warning', ugettext_lazy(
@@ -119,15 +120,13 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
                 " dashboard."
             )))
         else:
-            libcast_urls = self.get_libcast_urls()
-            context.update({
-                'thumbnail_url': libcast_urls.thumbnail_url(self.video_id)
-            })
             try:
                 libcast_client = self.get_libcast_client()
+                resource = libcast_client.get_resource(self.video_id)
                 context.update({
                     'video_sources': libcast_client.video_sources(self.video_id),
-                    'subtitles': libcast_client.get_video_subtitles(self.video_id),
+                    'subtitles': libcast_client.get_resource_subtitles(resource),
+                    'thumbnail_url': libcast_client.get_resource_thumbnail_url(resource),
                 })
                 if self.allow_download:
                     context['downloadable_files'] = libcast_client.downloadable_files(self.video_id)
