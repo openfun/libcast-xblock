@@ -90,6 +90,9 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         caps = videoproviders.subtitles.get_vtt_content(url) or ""
         return webob.Response(caps, content_type='text/vtt')
 
+    def get_icon_class(self):
+        """CSS class to be used in courseware sequence list."""
+        return 'video'
 
     def student_view(self, context=None):
         fragment = self.get_content()
