@@ -108,6 +108,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         template = Template(template_content)
         messages = []# tuple list
         context = {
+            'display_name': self.display_name,
             'video_id': self.video_id,
             'transcript_root_url': self.transcript_root_url(),
             'messages': messages,

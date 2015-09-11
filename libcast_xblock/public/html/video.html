@@ -1,4 +1,5 @@
 <div class="libcast-xblock" data-video-id="{{ video_id }}">
+  <h2>{{ display_name }}</h2>
   {% for level, message in messages %}
   <p class="{{ level }}"><i class="icon fa fa-{{ level }}"></i><span>{{ message }}</span></p>
   {% endfor %}
