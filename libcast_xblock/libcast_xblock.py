@@ -65,6 +65,10 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
     def course_key_string(self):
         return unicode(self.location.course_key)
 
+    @property
+    def resource_slug(self):
+        return None if self.video_id is None else self.video_id.strip()
+
     def transcript_root_url(self):
         url = self.runtime.handler_url(self, 'transcript')
         # url is suffixed with '?' in preview mode
@@ -83,10 +87,10 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         them to vtt format.
         """
         subtitle_id = request.GET.get('id')
-        if not subtitle_id or not self.video_id:
+        if not subtitle_id or not self.resource_slug:
             return webob.Response(status=404)
         libcast_urls = self.get_libcast_urls()
-        url = libcast_urls.subtitle_href(self.video_id, subtitle_id)
+        url = libcast_urls.subtitle_href(self.resource_slug, subtitle_id)
         caps = videoproviders.subtitles.get_vtt_content(url) or ""
         return webob.Response(caps, content_type='text/vtt')
 
@@ -98,7 +102,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         fragment = self.get_content()
         fragment.initialize_js("LibcastXBlock", json_args={
             'course_id': self.course_key_string,
-            'video_id': self.video_id,
+            'video_id': self.resource_slug,
         })
         return fragment
 
@@ -109,7 +113,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         messages = []# tuple list
         context = {
             'display_name': self.display_name,
-            'video_id': self.video_id,
+            'video_id': self.resource_slug,
             'transcript_root_url': self.transcript_root_url(),
             'messages': messages,
             'video_sources': [],
@@ -117,7 +121,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
             'downloadable_files': [],
             'thumbnail_url': '',
         }
-        if not self.video_id:
+        if not self.resource_slug:
             messages.append(('warning', ugettext_lazy(
                 "You need to define a valid video ID. "
                 "Video IDs for your course can be found in the video upload"
@@ -126,14 +130,14 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         else:
             try:
                 libcast_client = self.get_libcast_client()
-                resource = libcast_client.get_resource(self.video_id)
+                resource = libcast_client.get_resource(self.resource_slug)
                 context.update({
-                    'video_sources': libcast_client.video_sources(self.video_id),
+                    'video_sources': libcast_client.video_sources(self.resource_slug),
                     'subtitles': libcast_client.get_resource_subtitles(resource),
                     'thumbnail_url': libcast_client.get_resource_thumbnail_url(resource),
                 })
                 if self.allow_download:
-                    context['downloadable_files'] = libcast_client.downloadable_files(self.video_id)
+                    context['downloadable_files'] = libcast_client.downloadable_files(self.resource_slug)
             except libcast.MissingCredentials as e:
                 messages.append(('error', e.verbose_message))
             except libcast.ClientError as e:
