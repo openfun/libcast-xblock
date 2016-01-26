@@ -15,7 +15,6 @@ from xblock.fragment import Fragment
 from xblockutils.studio_editable import StudioEditableXBlockMixin
 
 from videoproviders.api import libcast
-import videoproviders.subtitles
 
 
 logger = logging.getLogger(__name__)
@@ -55,12 +54,6 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
     def __init__(self, *args, **kwargs):
         super(LibcastXBlock, self).__init__(*args, **kwargs)
 
-    def get_libcast_client(self):
-        return libcast.Client(self.course_key_string)
-
-    def get_libcast_urls(self):
-        return libcast.LibcastUrls(self.course_key_string)
-
     @property
     def course_key_string(self):
         return unicode(self.location.course_key)
@@ -89,9 +82,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         subtitle_id = request.GET.get('id')
         if not subtitle_id or not self.resource_slug:
             return webob.Response(status=404)
-        libcast_urls = self.get_libcast_urls()
-        url = libcast_urls.subtitle_href(self.resource_slug, subtitle_id)
-        caps = videoproviders.subtitles.get_vtt_content(url) or ""
+        caps = libcast.get_vtt_content(self.course_key_string, self.resource_slug, subtitle_id) or ""
         return webob.Response(caps, content_type='text/vtt')
 
     def get_icon_class(self):
@@ -116,10 +107,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
             'video_id': self.resource_slug,
             'transcript_root_url': self.transcript_root_url(),
             'messages': messages,
-            'video_sources': [],
-            'subtitles': [],
-            'downloadable_files': [],
-            'thumbnail_url': '',
+            'resource': {}, # To be provided by libcast
         }
         if not self.resource_slug:
             messages.append(('warning', ugettext_lazy(
@@ -129,15 +117,9 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
             )))
         else:
             try:
-                libcast_client = self.get_libcast_client()
-                resource = libcast_client.get_resource(self.resource_slug)
-                context.update({
-                    'video_sources': libcast_client.video_sources(self.resource_slug),
-                    'subtitles': libcast_client.get_resource_subtitles(resource),
-                    'thumbnail_url': libcast_client.get_resource_thumbnail_url(resource),
-                })
-                if self.allow_download:
-                    context['downloadable_files'] = libcast_client.downloadable_files(self.resource_slug)
+                context['resource'] = libcast.get_cached_resource_dict(self.course_key_string, self.resource_slug)
+                if not self.allow_download:
+                    context['resource'].pop('downloadable_files')
             except libcast.MissingCredentials as e:
                 messages.append(('error', e.verbose_message))
             except libcast.ClientError as e:
