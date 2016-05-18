@@ -123,7 +123,9 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
             except libcast.MissingCredentials as e:
                 messages.append(('error', e.verbose_message))
             except libcast.ClientError as e:
-                logger.exception(e)
+                # Note that we may not log an exception here, because unicode
+                # messages cannot be encoded by the logger
+                logger.error(e.message)
                 messages.append(('error', ugettext_lazy("An unexpected error occurred.")))
 
         content = template.render(Context(context))
