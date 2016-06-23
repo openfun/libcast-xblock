@@ -41,6 +41,13 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         display_name=ugettext_lazy('Video ID')
     )
 
+    is_youtube_video = Boolean(
+        help=ugettext_lazy("Is this video stored on youtube?"),
+        display_name=ugettext_lazy("Youtube video"),
+        scope=Scope.settings,
+        default=False
+    )
+
     allow_download = Boolean(
         help=ugettext_lazy("Allow students to download this video."),
         display_name=ugettext_lazy("Video download allowed"),
@@ -48,7 +55,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         default=True
     )
 
-    editable_fields = ('display_name', 'video_id', 'allow_download', )
+    editable_fields = ('display_name', 'video_id', 'is_youtube_video', 'allow_download', )
 
 
     def __init__(self, *args, **kwargs):
@@ -90,16 +97,15 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         return 'video'
 
     def student_view(self, context=None):
-        fragment = self.get_content()
-        fragment.initialize_js("LibcastXBlock", json_args={
-            'course_id': self.course_key_string,
-            'video_id': self.resource_slug,
-        })
+        fragment = Fragment()
+        if self.is_youtube_video:
+            self.get_youtube_content(fragment)
+        else:
+            self.get_libcast_content(fragment)
         return fragment
 
-    def get_content(self):
-        fragment = Fragment()
-        template_content = self.resource_string("public/html/video.html")
+    def get_libcast_content(self, fragment):
+        template_content = self.resource_string("public/html/libcast.html")
         template = Template(template_content)
         messages = []# tuple list
         context = {
@@ -139,7 +145,20 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         fragment.add_css_url("/static/fun/js/vendor/videojs/video-js.min.css")
         fragment.add_javascript(self.resource_string("public/js/libcast_xblock.js"))
 
-        return fragment
+        fragment.initialize_js("LibcastXBlock", json_args={
+            'course_id': self.course_key_string,
+            'video_id': self.resource_slug,
+        })
+
+    def get_youtube_content(self, fragment):
+        template_content = self.resource_string("public/html/youtube.html")
+        template = Template(template_content)
+        context = {
+            'display_name': self.display_name,
+            'video_id': self.resource_slug,
+        }
+        content = template.render(Context(context))
+        fragment.add_content(content)
 
     def resource_string(self, path):
         """Handy helper for getting resources from our kit."""
