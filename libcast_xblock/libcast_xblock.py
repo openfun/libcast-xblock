@@ -2,6 +2,8 @@
 
 import logging
 import pkg_resources
+import random
+import string
 import webob
 
 from django.template import Context, Template
@@ -13,8 +15,6 @@ from xblock.core import XBlock
 from xblock.fields import Boolean, Scope, String
 from xblock.fragment import Fragment
 from xblockutils.studio_editable import StudioEditableXBlockMixin
-
-from videoproviders.api import libcast
 
 
 logger = logging.getLogger(__name__)
@@ -86,10 +86,12 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         Because srt subtitles are unsupported by Chrome, we need to convert
         them to vtt format.
         """
+        from videoproviders.api.libcast import get_vtt_content
+
         subtitle_id = request.GET.get('id')
         if not subtitle_id or not self.resource_slug:
             return webob.Response(status=404)
-        caps = libcast.get_vtt_content(self.course_key_string, self.resource_slug, subtitle_id) or ""
+        caps = get_vtt_content(self.course_key_string, self.resource_slug, subtitle_id) or ""
         return webob.Response(caps, content_type='text/vtt')
 
     def get_icon_class(self):
@@ -105,6 +107,8 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         return fragment
 
     def get_libcast_content(self, fragment):
+        from videoproviders.api import libcast
+
         template_content = self.resource_string("public/html/libcast.html")
         template = Template(template_content)
         messages = []# tuple list
@@ -151,14 +155,27 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         })
 
     def get_youtube_content(self, fragment):
+        # iframe element id
+        element_id = ''.join([random.choice(string.ascii_lowercase) for _ in range(0, 20)])
+
+        # Add html code
         template_content = self.resource_string("public/html/youtube.html")
         template = Template(template_content)
         context = {
             'display_name': self.display_name,
             'video_id': self.resource_slug,
+            'element_id': element_id
         }
         content = template.render(Context(context))
         fragment.add_content(content)
+
+        # Add youtube event logger
+        fragment.add_javascript(self.resource_string("public/js/youtube.js"))
+        fragment.initialize_js("YoutubePlayer", json_args={
+            'course_id': self.course_key_string,
+            'video_id': self.resource_slug,
+            'element_id': element_id
+        })
 
     def resource_string(self, path):
         """Handy helper for getting resources from our kit."""
