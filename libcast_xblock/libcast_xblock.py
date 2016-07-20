@@ -20,6 +20,7 @@ from xblockutils.studio_editable import StudioEditableXBlockMixin
 logger = logging.getLogger(__name__)
 
 
+@XBlock.needs('settings')
 class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
     """
     Play videos based on a modified videojs player. This XBlock supports
@@ -103,8 +104,20 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         if self.is_youtube_video:
             self.get_youtube_content(fragment)
         else:
-            self.get_libcast_content(fragment)
+            # Libcast is unvailable for the time being
+            self.get_libcast_unavailable_content(fragment)
+            # self.get_libcast_content(fragment)
         return fragment
+
+    def get_libcast_unavailable_content(self, fragment):
+        from django.conf import settings # Bad. We are not supposed to import settings from here.
+
+        template_content = self.resource_string("public/html/unavailable.html")
+        template = Template(template_content)
+        content = template.render(Context({
+            "lms_base": settings.LMS_BASE
+        }))
+        fragment.add_content(content)
 
     def get_libcast_content(self, fragment):
         from videoproviders.api import libcast
