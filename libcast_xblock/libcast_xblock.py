@@ -1,12 +1,13 @@
 """XBlock for videos stored by Youtube."""
 
 import logging
-import pkg_resources
 import random
 import string
-import webob
+
+import pkg_resources
 
 from django.template import Context, Template
+from django.contrib.staticfiles.storage import staticfiles_storage
 # TODO actually translate the app
 from django.utils.translation import ugettext_lazy
 # from django.utils.translation import ugettext as _
@@ -26,6 +27,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
     Play videos based on a modified videojs player. This XBlock supports
     subtitles and multiple resolutions.
     """
+
     display_name = String(
         help=ugettext_lazy("The name students see. This name appears in "
                            "the course ribbon and as a header for the video."),
@@ -34,7 +36,6 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         scope=Scope.settings
     )
 
-    # Youtube ID
     video_id = String(
         scope=Scope.settings,
         help=ugettext_lazy('Fill this with the ID of the video found in the video uploads dashboard'),
@@ -43,10 +44,10 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
     )
 
     is_youtube_video = Boolean(
-        help=ugettext_lazy("Is this video stored on youtube?"),
-        display_name=ugettext_lazy("Youtube video"),
+        help=ugettext_lazy("Is this video stored on Youtube?"),
+        display_name=ugettext_lazy("Video storage"),
         scope=Scope.settings,
-        default=True
+        default=True # Stored on Youtube by default
     )
 
     allow_download = Boolean(
@@ -86,19 +87,72 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         if self.is_youtube_video and self.video_id:
             self.get_youtube_content(fragment)
         else:
-            self.unavailable_content(fragment)
+            self.get_videofront_content(fragment)
         return fragment
 
-    def unavailable_content(self, fragment):
-        from django.conf import settings  # Bad. We are not supposed to import settings from here.
+    def get_videofront_content(self, fragment):
+        from videoproviders.api import videofront
 
-        template_content = self.resource_string("public/html/unavailable.html")
+        template_content = self.resource_string("public/html/videofront.html")
         template = Template(template_content)
-        content = template.render(Context({
-            'lms_base': settings.LMS_BASE,
-            'is_studio': self.is_studio,
-        }))
+        messages = []# tuple list
+        context = {
+            'display_name': self.display_name,
+            'video_id': self.resource_slug,
+            'transcript_root_url': self.transcript_root_url(),
+            'messages': messages,
+            'video': {},
+            'allow_download': self.allow_download,
+            'downloads': [],
+        }
+        if self.resource_slug:
+            try:
+                videofront_client = videofront.Client(self.course_key_string)
+                video = videofront_client.get_video_with_subtitles(self.resource_slug)
+                context['video'] = video
+                download_labels = {
+                    'HD': 'Haute (1080p)',
+                    'SD': 'Normale (720p)',
+                    'LD': 'Mobile (480p)',
+                }
+
+                # Sort download links by decreasing bitrates
+                video_sources = video['video_sources'][::-1]
+                context['downloads'] = [
+                    {
+                        'url': source['url'],
+                        'label': download_labels.get(source['label'], source['label'])
+                    }
+                    for source in video_sources
+                ]
+
+            except videofront.MissingCredentials as e:
+                messages.append(('error', e.verbose_message))
+            except videofront.ClientError as e:
+                # Note that we may not log an exception here, because unicode
+                # messages cannot be encoded by the logger
+                logger.error(e.message)
+                messages.append(('error', ugettext_lazy("An unexpected error occurred.")))
+        else:
+            messages.append(('warning', ugettext_lazy(
+                "You need to define a valid video ID. "
+                "Video IDs for your course can be found in the video upload"
+                " dashboard."
+            )))
+
+        content = template.render(Context(context))
         fragment.add_content(content)
+
+        fragment.add_css(self.resource_string("public/css/style.css"))
+        # Load video-js stylesheet from FUN; if this becomes a problem, we can
+        # always copy the stylesheet to the xblock.
+        fragment.add_css_url(staticfiles_storage.url("fun/js/vendor/videojs/video-js.min.css"))
+        fragment.add_javascript(self.resource_string("public/js/videofront.js"))
+
+        fragment.initialize_js("VideoXBlock", json_args={
+            'course_id': self.course_key_string,
+            'video_id': self.resource_slug,
+        })
 
     def get_youtube_content(self, fragment):
         # iframe element id
