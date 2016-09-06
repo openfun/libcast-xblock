@@ -99,7 +99,6 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         context = {
             'display_name': self.display_name,
             'video_id': self.resource_slug,
-            'transcript_root_url': self.transcript_root_url(),
             'messages': messages,
             'video': {},
             'allow_download': self.allow_download,

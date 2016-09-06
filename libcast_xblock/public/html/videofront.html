@@ -13,12 +13,13 @@
       height="375px"
       poster="{{ video.thumbnail_url }}"
       data-setup='{ "playbackRates": [0.5, 1, 1.5, 2] }'
+      crossorigin="anonymous"
       >
       {% for source in video.video_sources %}
       <source src="{{ source.url }}" type="video/mp4" label="{{ source.label }}" res="{{ source.res }}"/>
       {% endfor %}
       {% for subtitle in video.subtitles %}
-      <track src="{{ transcript_root_url }}?url={{ subtitle.url|urlencode }}" kind="subtitles" srclang="{{ subtitle.language }}" label="{{ subtitle.language_label}}">
+      <track src="{{ subtitle.url }}" kind="subtitles" srclang="{{ subtitle.language }}" label="{{ subtitle.language_label}}">
       {% endfor %}
       <p class="vjs-no-js">To view this video please enable JavaScript, and consider upgrading to a web browser that <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a></p>
     </video>
