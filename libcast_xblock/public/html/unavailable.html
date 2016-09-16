@@ -1,3 +1,13 @@
 <div class="libcast-xblock">
-    <p>Malheureusement, cette vidéo est indisponible car elle n'a pas encore été transférée à notre nouvel hébergeur. Cette situation sera réglée au cours des jours qui viennent. En attendant, nous vous proposons d'aller consulter la <a href="{{ lms_base }}/cours/">liste des cours disponibles.</a> Merci pour votre patience !</p>
+    <p>
+    {% if is_studio %}
+        Ce bloc vidéo n'est pas correctement configuré, veuillez cliquer sur "ÉDITER" et saisir l'ID de la video que vous voulez utiliser.
+    {% else %}
+        <strong>Malheureusement, cette vidéo est indisponible.</strong>
+        <br><br>
+        En attendant, nous vous proposons d'aller consulter la <a href="{{ lms_base }}/cours/">liste des cours disponibles.</a>
+        <br>Merci pour votre patience !
+    {% endif %}
+    </p>
 </div>
+

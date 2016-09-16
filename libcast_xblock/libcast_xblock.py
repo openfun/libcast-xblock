@@ -46,7 +46,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         help=ugettext_lazy("Is this video stored on youtube?"),
         display_name=ugettext_lazy("Youtube video"),
         scope=Scope.settings,
-        default=False
+        default=True
     )
 
     allow_download = Boolean(
@@ -56,8 +56,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         default=True
     )
 
-    editable_fields = ('display_name', 'video_id', 'is_youtube_video', 'allow_download', )
-
+    editable_fields = ('display_name', 'video_id', 'allow_download', )
 
     def __init__(self, *args, **kwargs):
         super(LibcastXBlock, self).__init__(*args, **kwargs)
@@ -99,23 +98,30 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         """CSS class to be used in courseware sequence list."""
         return 'video'
 
+    def is_studio(self):
+        studio = False
+        try:
+            studio = self.runtime.is_author_mode
+        except AttributeError:
+            pass
+        return studio
+
     def student_view(self, context=None):
         fragment = Fragment()
-        if self.is_youtube_video:
+        if self.is_youtube_video and self.video_id:
             self.get_youtube_content(fragment)
         else:
-            # Libcast is unvailable for the time being
-            self.get_libcast_unavailable_content(fragment)
-            # self.get_libcast_content(fragment)
+            self.unavailable_content(fragment)
         return fragment
 
-    def get_libcast_unavailable_content(self, fragment):
-        from django.conf import settings # Bad. We are not supposed to import settings from here.
+    def unavailable_content(self, fragment):
+        from django.conf import settings  # Bad. We are not supposed to import settings from here.
 
         template_content = self.resource_string("public/html/unavailable.html")
         template = Template(template_content)
         content = template.render(Context({
-            "lms_base": settings.LMS_BASE
+            'lms_base': settings.LMS_BASE,
+            'is_studio': self.is_studio,
         }))
         fragment.add_content(content)
 
@@ -124,13 +130,13 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
 
         template_content = self.resource_string("public/html/libcast.html")
         template = Template(template_content)
-        messages = []# tuple list
+        messages = []  # tuple list
         context = {
             'display_name': self.display_name,
             'video_id': self.resource_slug,
             'transcript_root_url': self.transcript_root_url(),
             'messages': messages,
-            'resource': {}, # To be provided by libcast
+            'resource': {},  # To be provided by libcast
         }
         if not self.resource_slug:
             messages.append(('warning', ugettext_lazy(
