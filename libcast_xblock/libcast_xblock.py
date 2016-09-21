@@ -100,23 +100,43 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
             'display_name': self.display_name,
             'video_id': self.resource_slug,
             'messages': messages,
-            'video': {},
             'allow_download': self.allow_download,
             'downloads': [],
+            'sources': [],
+            'subtitles': [],
+            'thumbnail_url': '',
         }
         if self.resource_slug:
             try:
                 videofront_client = videofront.Client(self.course_key_string)
                 video = videofront_client.get_video_with_subtitles(self.resource_slug)
-                context['video'] = video
+                context['subtitles'] = video['subtitles']
+                context['thumbnail_url'] = video['thumbnail_url']
+
+                # Sort video sources by decreasing resolution
+                video_sources = sorted(video['video_sources'], key=lambda s: -s['res'])
+
+                # Streaming sources
+                source_labels = {
+                    'HD': '1080p',
+                    'SD': '720p',
+                    'LD': '480p',
+                }
+                context['sources'] = [
+                    {
+                        'url': source['url'],
+                        'label': source_labels.get(source['label'], source['label']),
+                        'res': source['res'],
+                    }
+                    for source in video_sources
+                ]
+
+                # Download links
                 download_labels = {
                     'HD': 'Haute (1080p)',
                     'SD': 'Normale (720p)',
                     'LD': 'Mobile (480p)',
                 }
-
-                # Sort download links by decreasing bitrates
-                video_sources = video['video_sources'][::-1]
                 context['downloads'] = [
                     {
                         'url': source['url'],
