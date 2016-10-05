@@ -11,6 +11,7 @@ from django.contrib.staticfiles.storage import staticfiles_storage
 # TODO actually translate the app
 from django.utils.translation import ugettext_lazy
 # from django.utils.translation import ugettext as _
+import webob
 
 from xblock.core import XBlock
 from xblock.fields import Boolean, Scope, String
@@ -70,6 +71,29 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
     def resource_slug(self):
         return None if self.video_id is None else self.video_id.strip()
 
+    def transcript_root_url(self):
+        url = self.runtime.handler_url(self, 'transcript')
+        # url is suffixed with '?' in preview mode
+        return url.strip('?')
+
+    @XBlock.handler
+    def transcript(self, request, dispatch):
+        """
+        Proxy view for downloading subtitle files
+
+        <track> elements that point to external resources are not supported by
+        IE11 and Microsoft Edge:
+        http://stackoverflow.com/questions/35138642/ms-edge-video-cross-origin-subtitles-fail
+        As a consequence, we need to download the subtitle file server-side.
+        """
+        from videoproviders.subtitles import get_vtt_content
+
+        subtitle_url = request.GET.get('url')
+        if not subtitle_url:
+            return webob.Response(status=404)
+        caps = get_vtt_content(subtitle_url) or ""
+        return webob.Response(caps, content_type='text/vtt')
+
     def get_icon_class(self):
         """CSS class to be used in courseware sequence list."""
         return 'video'
@@ -105,6 +129,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
             'sources': [],
             'subtitles': [],
             'thumbnail_url': '',
+            'transcript_root_url': self.transcript_root_url(),
         }
         if self.resource_slug:
             try:
