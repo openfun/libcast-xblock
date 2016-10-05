@@ -48,7 +48,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         help=ugettext_lazy("Is this video stored on Youtube?"),
         display_name=ugettext_lazy("Video storage"),
         scope=Scope.settings,
-        default=True # Stored on Youtube by default
+        default=False # Stored on Videofront by default
     )
 
     allow_download = Boolean(
