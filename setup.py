@@ -22,7 +22,7 @@ def package_data(pkg, roots):
 
 setup(
     name='libcast-xblock',
-    version='0.4.1',
+    version='0.4.2',
     description='XBlock for displaying videos hosted by Libcast',
     packages=[
         'libcast_xblock',
