@@ -1,11 +1,20 @@
 function VideoXBlock(runtime, element, args) {
   'use strict';
   var require = require || RequireJS.require;
-  require(['videoplayer-fun'], function(videoplayer) {
+  require(['videoplayer-fun', 'adways-player'], function(videoplayer, adways) {
 
     var videoPlayerElement = $(element).find('.videoplayer');
     var transcriptElement = videoPlayerElement.find(".transcript");
     var player = videoplayer(videoPlayerElement.find('video')[0]);
+
+    if (args.adways_id) {
+      var experience = new adways.interactive.Experience();
+      experience.setPublicationID(args.adways_id);
+      experience.setPlayerAPI(player);
+      experience.setPlayerClass("videojs");
+      experience.setSceneTimeReference(false); //true for live interactivity (i.e. based on user time instead of video time).
+      experience.load();
+    }
 
     // Configure transcripts
     player.one('loadedmetadata', function() {

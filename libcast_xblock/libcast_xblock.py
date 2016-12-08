@@ -58,7 +58,15 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         default=True
     )
 
-    editable_fields = ('display_name', 'video_id', 'is_youtube_video', 'allow_download', )
+    adways_id = String(
+        scope=Scope.settings,
+        help=ugettext_lazy(""),
+        default="",
+        display_name=ugettext_lazy('Adways ID')
+    )
+
+
+    editable_fields = ('display_name', 'video_id', 'adways_id', 'is_youtube_video', 'allow_download', )
 
     def __init__(self, *args, **kwargs):
         super(LibcastXBlock, self).__init__(*args, **kwargs)
@@ -196,6 +204,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         fragment.initialize_js("VideoXBlock", json_args={
             'course_id': self.course_key_string,
             'video_id': self.resource_slug,
+            'adways_id': self.adways_id,
         })
 
     def get_youtube_content(self, fragment):
