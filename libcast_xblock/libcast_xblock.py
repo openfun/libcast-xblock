@@ -130,7 +130,6 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
 
     def get_videofront_content(self, fragment):
         from videoproviders.api import videofront
-
         template_content = self.resource_string("public/html/videofront.html")
         template = Template(template_content)
         messages = []  # tuple list
@@ -204,9 +203,11 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         fragment.add_content(content)
 
         fragment.add_css(self.resource_string("public/css/style.css"))
-        # Load video-js stylesheet from FUN; if this becomes a problem, we can
-        # always copy the stylesheet to the xblock.
-        fragment.add_css_url(staticfiles_storage.url("fun/js/vendor/videojs/video-js.min.css"))
+
+        # Embed complete FUN VideoJS to import CSS, it must be an other way...
+        # Javascript really used by xblock is imported from fun-apps/fun/static/fun/js/vendor by require-config.js
+        fragment.add_css_url(staticfiles_storage.url("public/vendor/videojs/video-js.css"))
+
         fragment.add_javascript(self.resource_string("public/js/videofront.js"))
 
         fragment.initialize_js("VideoXBlock", json_args={
