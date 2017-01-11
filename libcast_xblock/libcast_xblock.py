@@ -6,6 +6,7 @@ import string
 
 import pkg_resources
 
+from django.conf import settings as django_settings
 from django.template import Context, Template
 from django.contrib.staticfiles.storage import staticfiles_storage
 # TODO actually translate the app
@@ -65,8 +66,13 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
         display_name=ugettext_lazy('Adways ID')
     )
 
-
-    editable_fields = ('display_name', 'video_id', 'adways_id', 'is_youtube_video', 'allow_download', )
+    @property
+    def editable_fields(self):
+        fields = ('display_name', 'video_id', 'is_youtube_video', 'allow_download')
+        adways_courses = getattr(django_settings, 'ENABLE_ADWAYS_FOR_COURSES', [])
+        if self.course_key_string in adways_courses:
+            fields += ('adways_id',)
+        return fields
 
     def __init__(self, *args, **kwargs):
         super(LibcastXBlock, self).__init__(*args, **kwargs)
