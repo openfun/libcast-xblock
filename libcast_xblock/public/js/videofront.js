@@ -5,7 +5,12 @@ function VideoXBlock(runtime, element, args) {
 
     var videoPlayerElement = $(element).find('.videoplayer');
     var transcriptElement = videoPlayerElement.find(".transcript");
-    var player = videoplayer(videoPlayerElement.find('video')[0]);
+    var video = videoPlayerElement.find('video')[0]
+
+    // disable video element contextual menu...
+    $(video).bind('contextmenu',function() { return false; });
+
+    var player = videoplayer(video);
 
     if (args.adways_id) {
       var experience = new adways.interactive.Experience();
