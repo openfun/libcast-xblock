@@ -117,16 +117,20 @@ function VideoXBlock(runtime, element, args) {
           log(logEventName, data);
       });
     };
+
     function log(eventName, data) {
-        var logInfo = {
-          course_id: args.course_id,
-          video_id: args.video_id,
-        };
-        if (data) {
-          $.extend(logInfo, data);
-        }
+        var logInfo = _.extend({
+            // Old FUN params
+            course_id: args.course_id, // this value is now useless
+            video_id: args.video_id,   // this field is now useless
+
+            // edX params
+            id: args.block_id,         // xblock id in course
+            code: args.video_id        // video ID
+        }, data);
         Logger.log(eventName, logInfo);
-    }
+    };
+
 
     logTimeOnEvent('seeked', 'seek_video', 'new_time');
     logTimeOnEvent('ended', 'stop_video');

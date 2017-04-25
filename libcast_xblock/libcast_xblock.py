@@ -133,7 +133,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
 
         template_content = self.resource_string("public/html/videofront.html")
         template = Template(template_content)
-        messages = []# tuple list
+        messages = []  # tuple list
         context = {
             'display_name': self.display_name,
             'video_id': self.resource_slug,
@@ -211,6 +211,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
             'course_id': self.course_key_string,
             'video_id': self.resource_slug,
             'adways_id': self.adways_id,
+            'block_id': self.location.block_id,
         })
 
     def get_youtube_content(self, fragment):
