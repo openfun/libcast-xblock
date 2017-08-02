@@ -160,6 +160,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
                     'HD': '1080p',
                     'SD': '720p',
                     'LD': '480p',
+                    'UL': '240p',
                 }
                 context['sources'] = [
                     {
@@ -175,6 +176,7 @@ class LibcastXBlock(StudioEditableXBlockMixin, XBlock):
                     'HD': 'Haute (1080p)',
                     'SD': 'Normale (720p)',
                     'LD': 'Mobile (480p)',
+                    'UL': 'Basse (240p)',
                 }
                 context['downloads'] = [
                     {
