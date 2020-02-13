@@ -8,7 +8,12 @@ Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-Nothing for now.
+## [0.6.0] - 2020-02-13
+
+### Added
+
+- Implement experimental support for BokeCC video provider (legacy feature for
+  developped 3 years ago for a white brand) See openfun/libcast-xblock#8
 
 ## [0.5.0] - 2018-03-21
 
