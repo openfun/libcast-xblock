@@ -8,6 +8,11 @@ Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+
+- Revert commit which was embeding Video-JS player as it breaks build
+  and should not be necessary.
+
 ## [0.6.0] - 2020-02-13
 
 ### Added
